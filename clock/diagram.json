@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "author": "Ssentongo",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "board-esp32-s3-devkitc-1",
+      "id": "esp",
+      "top": 47.82,
+      "left": -149.03,
+      "attrs": { "builder": "esp-idf" }
+    },
+    { "type": "wokwi-74hc595", "id": "sr1", "top": 114, "left": -42.56, "attrs": {} },
+    {
+      "type": "wokwi-7segment",
+      "id": "sevseg1",
+      "top": 293.82,
+      "left": 1.12,
+      "attrs": { "common": "cathode", "digits": "4", "colon": "1" }
+    }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "sr1:DS", "esp:19", "green", [ "v-123.6", "h211.2", "v220.8" ] ],
+    [ "sr1:GND", "esp:GND.1", "black", [ "v0" ] ],
+    [ "sr1:VCC", "esp:3V3.1", "red", [ "v0" ] ],
+    [ "sevseg1:A", "sr1:Q0", "green", [ "v-18.36", "h-76.8", "v-124.8", "h57.6" ] ],
+    [ "sevseg1:C", "sr1:Q2", "green", [ "v19.2", "h19.2", "v-153.6", "h-67.2" ] ],
+    [ "sevseg1:B", "sr1:Q1", "green", [ "v-56.76", "h-19.2" ] ],
+    [ "sevseg1:D", "sr1:Q3", "green", [ "v28.8", "h48", "v-172.8", "h-38.4" ] ],
+    [ "sevseg1:E", "sr1:Q4", "green", [ "v28.8", "h67.2", "v-182.4", "h-38.4" ] ],
+    [ "sevseg1:F", "sr1:Q5", "green", [ "v-37.56", "h28.8" ] ],
+    [ "sevseg1:G", "sr1:Q6", "green", [ "v-27.96", "h48" ] ],
+    [ "sr1:OE", "esp:GND.2", "black", [ "v-114", "h192", "v28.8" ] ],
+    [ "sr1:STCP", "esp:16", "green", [ "v0" ] ],
+    [ "sr1:SHCP", "esp:15", "green", [ "v-18" ] ],
+    [ "sr1:MR", "esp:3V3.1", "green", [ "v-85.2", "h-192", "v48" ] ],
+    [ "sevseg1:COM.1", "esp:GND.3", "green", [ "h0" ] ],
+    [ "sevseg1:COM.2", "esp:GND.4", "green", [ "h0" ] ],
+    [ "sevseg1:DIG1", "esp:17", "green", [ "v0" ] ],
+    [ "sevseg1:DIG2", "esp:18", "green", [ "v0" ] ],
+    [ "sevseg1:DIG3", "esp:11", "green", [ "v0" ] ],
+    [ "sevseg1:DIG4", "esp:12", "green", [ "v0" ] ]
+  ],
+  "dependencies": {}
+}
