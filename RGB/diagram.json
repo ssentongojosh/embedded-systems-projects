@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "author": "Ssentongo",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "board-esp32-s3-devkitc-1",
+      "id": "esp",
+      "top": 0,
+      "left": 0,
+      "attrs": { "builder": "esp-idf" }
+    },
+    {
+      "type": "wokwi-rgb-led",
+      "id": "rgb1",
+      "top": 52,
+      "left": -123.7,
+      "attrs": { "common": "cathode" }
+    },
+    { "type": "wokwi-gnd", "id": "gnd1", "top": 115.2, "left": -115.8, "attrs": {} }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "gnd1:GND", "rgb1:COM", "black", [ "v0" ] ],
+    [ "rgb1:R", "esp:6", "green", [ "v0" ] ],
+    [ "rgb1:G", "esp:7", "green", [ "v0" ] ],
+    [ "rgb1:B", "esp:8", "green", [ "v0" ] ]
+  ],
+  "dependencies": {}
+}
