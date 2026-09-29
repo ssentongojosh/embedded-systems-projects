@@ -4,6 +4,7 @@
 #include "freertos/projdefs.h"
 #include "freertos/task.h"
 #include "freertos/timers.h"
+#include "freertos/semphr.h"
 
 #define CLOCK GPIO_NUM_15
 #define LATCH GPIO_NUM_16
@@ -18,23 +19,20 @@
   ((1UL << CLOCK) | (1UL << LATCH) | (1UL << DATA_) | (1UL << DIGIT1) |        \
    (1UL << DIGIT2) | (1UL << DIGIT3) | (1UL << DIGIT4))
 
-   const uint8_t digitTable[] = {
-      0b00111111, 0b00000110, 0b01011011, 0b01001111, 0b01100110,
-      0b01101101, 0b01111101, 0b00000111, 0b01111111, 0b01101111,
-  };
+const uint8_t digitTable[] = {
+    0b00111111, 0b00000110, 0b01011011, 0b01001111, 0b01100110,
+    0b01101101, 0b01111101, 0b00000111, 0b01111111, 0b01101111,
+};
 
 int total_seconds = 0;
 int current_digit[4] = {};
 
 TimerHandle_t clock_timer;
+SemaphoreHandle_t my_mutex;
 
+void select_write(uint8_t data, int digit) {
 
-
-
-
-void select_write(uint8_t data,int digit) {
-
-   gpio_set_level(LATCH, 0);
+  gpio_set_level(LATCH, 0);
 
   for (int i = 7; i >= 0; i--) {
     /** This gave me hard time to figure out
@@ -87,24 +85,38 @@ void select_write(uint8_t data,int digit) {
 }
 
 void vUpdateDigit(TimerHandle_t clock_timer) {
-  total_seconds++;
-  current_digit[0] = (total_seconds/600)%6;
-  current_digit[1] = (total_seconds/60)%10;
-  current_digit[2] = (total_seconds/10)%6;
-  current_digit[3] = (total_seconds/1)%10;
-}
+  if (xSemaphoreTake(my_mutex, portMAX_DELAY)) {
+    total_seconds++;
+    current_digit[0] = (total_seconds / 600) % 6;
+    current_digit[1] = (total_seconds / 60) % 10;
+    current_digit[2] = (total_seconds / 10) % 6;
+    current_digit[3] = (total_seconds / 1) % 10;
 
-void vTaskRefresh(void * param){
-  while(1){
-  for (int i = 0; i < 4 ; i++){
-   select_write(digitTable[current_digit[i]],i);
+    xSemaphoreGive(my_mutex);
   }
 }
+
+void vTaskRefresh(void *param) {
+  while (1) {
+    if (xSemaphoreTake(my_mutex, portMAX_DELAY)) {
+      for (int i = 0; i < 4; i++) {
+        /*
+        we constantly refresh through all the digit segments
+        updating each with the value it ought to display
+        all the digit value diplayed depend on the total seconds value
+        which took me a while to grasp but is a genius implementation
+        so all values are on for 5ms and the digit they dispaly is from current
+        digit array which is updated after every one second. I use a software
+        timer for that
+        */
+        select_write(digitTable[current_digit[i]], i);
+      }
+      xSemaphoreGive(my_mutex);
+    }
+  }
 }
 
 void app_main() {
-
-  
 
   gpio_config_t pin_config = {.mode = GPIO_MODE_DEF_OUTPUT,
                               .pin_bit_mask = PIN_MASK,
@@ -113,7 +125,12 @@ void app_main() {
                               .intr_type = GPIO_INTR_DISABLE};
 
   gpio_config(&pin_config);
+
   gpio_set_level(DATA_, 0);
+  my_mutex = xSemaphoreCreateMutex();
+  if (my_mutex != NULL) {
+    ESP_LOGI("MAIN", "mutex created");
+  }
 
   gpio_set_level(DIGIT1, 1);
   gpio_set_level(DIGIT2, 1);
@@ -122,12 +139,7 @@ void app_main() {
 
   clock_timer = xTimerCreate("clock timer", pdMS_TO_TICKS(1000), pdTRUE,
                              (void *)0, vUpdateDigit);
-  
 
-  
-      xTimerStart(clock_timer,pdMS_TO_TICKS(1000));
-      xTaskCreate(vTaskRefresh,"Refresh",5012,NULL,1,NULL);
-
-
-  
+  xTimerStart(clock_timer, 0);
+  xTaskCreate(vTaskRefresh, "Refresh", 5012, NULL, 1, NULL);
 }
