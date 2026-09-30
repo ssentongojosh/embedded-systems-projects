@@ -16,36 +16,60 @@
 
 #define PIN_MASK ((1UL << RS) | (1UL << RW) | (1UL << EN) | (1UL << D0) | (1UL << D1) | (1UL << D2) | (1UL << D3) | (1UL << D4) | (1UL << D5) | (1UL << D6) | (1UL << D7))
 
-#define OUTPUT GPIO_MODE_OUTPUT
+int data_pins [8] = {D0, D1, D2, D3, D4, D5, D6, D7};
 
-void digit_write(int pin, int level){
-    gpio_set_level(pin,level);
+void write_command(uint8_t command){
+    gpio_set_level(RS,0);
+    gpio_set_level(RW,0);
+
+    for (int i = 0; i <= 7; i++){
+        gpio_set_level(data_pins[i],(command >> i) & 0x1);
+    }
     gpio_set_level(EN,1);
     vTaskDelay(pdMS_TO_TICKS(5));
     gpio_set_level(EN,0);
-
+    vTaskDelay(pdMS_TO_TICKS(5));
 }
+
+void write_data(char * data, int size){
+    gpio_set_level(RS,1);
+    gpio_set_level(RW,0);
+
+    
+   
+    for (int i = 0; i < size; i++)
+    {        
+        for (int j = 0; j <= 7; j++){
+        gpio_set_level(data_pins[j],(data[i] >> j) & 0x1);
+    }
+
+    gpio_set_level(EN,1);
+    vTaskDelay(pdMS_TO_TICKS(5));
+    gpio_set_level(EN,0);
+    vTaskDelay(pdMS_TO_TICKS(450));
+    }
+    
+}
+
 
 void app_main() {
     gpio_config_t pin_config = {
-        .mode = OUTPUT,
+        .mode = GPIO_MODE_OUTPUT,
         .pin_bit_mask = PIN_MASK,
     };
 
     gpio_config(&pin_config);
-    
 
-    // initialize
-    gpio_set_level(RS,0); //command set
-    gpio_set_level(RW,0); // write mode
+    // initialize lcd to display ON, cursor ON and cursor BLINKING
+    // this can be doen in entry mode (D3 = 1) and D2 = 1 (for display ON)
+    // D1 = 1 (for cursor ON) and D0 = 1 (for cursor blinking)
+    // this gives the value 00001111 which in hex values is 0x0F
 
-    digit_write(D0,1); // 1 = Blink char at cursor
-    digit_write(D1,1); // 1 = Cursor ON
-    digit_write(D2,1); // 1 = Display ON
-    digit_write(D3,1); // display ON/OFF control
-    digit_write(D4,0);
-    digit_write(D5,0);
-    digit_write(D6,0);
-    digit_write(D7,0);
+    uint8_t command = 0x0F;
+    write_command(command);
+
+    char data[16] = "hello Ssentongo"; 
+    int size = sizeof(data);
+    write_data(data, size);
 
 }
